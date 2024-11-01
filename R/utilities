@@ -1,0 +1,275 @@
+## This script includes functions necessary for CITE-Seq analysis
+
+## Function to convert the output of ICELL8 mapping pipeline "Cogent" to a Seurat object
+
+cogent2seurat<-function(cogentDS, min.cells=3, min.features=200, remove.ctrl=T, percent_mt=NULL, ds=T) {
+
+  if (ds){
+    load(cogentDS)
+    obj<-CogentDS_data$raw_data$gm
+    
+    gene.names<-rownames(obj)
+    id<-which(!duplicated(gsub(".*?_","",gene.names)))
+    gene.names[id]<-gsub(".*?_","",gene.names[id])
+    rownames(obj)<-gene.names
+    smpl<-CogentDS_data$raw_data$metadata$Sample
+    names(smpl)<-CogentDS_data$raw_data$metadata$Barcode
+    #Remove control wells
+    
+    if (remove.ctrl){
+      meta<-CogentDS_data$raw_data$metadata
+      g<-!grepl("Ctrl",meta$Sample)
+      obj<-obj[,g]
+    }
+    #colnames(obj)<-paste(colnames(obj),"_",smpl,sep = "")
+    
+    obj<-CreateSeuratObject(counts = obj,
+                            assay = "RNA",
+                            min.cells = min.cells,
+                            min.features = min.features)
+    obj$sample<-smpl[colnames(obj)]
+    
+    } else {
+      
+      d<-dir(cogentDS)
+      obj<-read.csv(paste(cogentDS,d[grep("genematrix",d)], sep = ""), header=T)
+      
+      rownames(obj)<-obj[,1]
+      
+      gene.names<-rownames(obj)
+      id<-which(!duplicated(gsub(".*_","",gene.names)))
+      gene.names[id]<-gsub(".*_","",gene.names[id])
+      rownames(obj)<-gene.names
+      
+      obj<-obj[,2:ncol(obj)]
+      cell.barcodes<-read.csv(paste(cogentDS,d[grep("stats",d)], sep = ""), header = T)
+
+      smpl<-cell.barcodes$Sample
+      names(smpl)<-cell.barcodes$Barcode
+      
+      if (remove.ctrl){
+        id<-!grepl("Ctr",cell.barcodes$Sample[1:(nrow(cell.barcodes)-3)])
+        obj<- obj[,id]
+        }
+      
+      obj<-CreateSeuratObject(counts = obj, assay = "RNA", min.cells = min.cells,min.features = min.features)
+      obj$sample<-smpl[colnames(obj)]
+    }
+  
+  obj[["percent.mt"]] <- PercentageFeatureSet(obj, pattern = "^MT-")
+  
+  if (!is.null(percent_mt)){
+  obj <- subset(obj, subset = nFeature_RNA > 200 & percent.mt < percent_mt)
+  }
+  return(obj)
+}
+
+## citeseq2seurat combines ADT and RNA-Seq data in a single Seurat object
+
+citeseq2seurat<-function(citeseq.path,cogentDS.path, pmt=NULL, ds=F, min.cells=3, min.features=200, remove.ctrl=T){
+
+  RNA<-cogent2seurat(cogentDS.path,
+                       min.cells=min.cells,
+                       min.features=min.features,
+                       percent_mt = pmt,
+                       remove.ctrl =remove.ctrl,
+                       ds=ds)
+  
+  ADT<-Read10X(data.dir =citeseq.path, gene.column = 1)
+  rownames(ADT)<-gsub("-.*", "", rownames(ADT))
+  
+  cells<-colnames(RNA)
+  RNA<-RenameCells(RNA, new.names = gsub("_.*","",cells))
+  
+  RNA <- subset(RNA, cells=colnames(ADT))
+  ADT<-ADT[,colnames(RNA)]
+  
+  ADT <- CreateAssayObject(counts = ADT)
+  RNA[["ADT"]] <- ADT
+  
+  DefaultAssay(RNA)<-"ADT"
+  
+  return(RNA)
+}
+
+
+# ADT Normalization
+
+normadt<-function(obj, cf=NULL) {
+  arcsinh<-function(x,cf){
+    log10((x/cf)+sqrt(1+(x/cf)^2))
+  }
+  ADT.normalizer2<-function(rawmat,citemeta,isotypes,cf=NULL) {
+    require(foreach)
+    
+    fraction<-foreach(i=1:nrow(rawmat),.combine = 'rbind') %do% {
+      rawmat[i,]/apply(rawmat,2,sum)}
+    
+    rownames(fraction)<-rownames(rawmat)
+    libsize<-apply(rawmat,2,sum)
+    isonorm<-foreach(i=1:length(isotypes),.combine="rbind") %do% {
+      z2<-citemeta[citemeta$Control==isotypes[i],]$CD
+      iso<-fraction[isotypes[i],]
+      z3<-fraction[z2,]-iso
+    }
+    
+    x4<-t(t(isonorm)*median(libsize))
+    x5<-replace(x4,which(x4<0),0)
+    x5<-x5[-(grep("isotype",(rownames(x5)))),]
+    fin<-t(x5)
+    if(is.null(cf)) {return(fin)} else {
+      fin<-arcsinh(fin+1,cf)
+      return(fin)
+    }
+  }
+  citemeta<-data.frame(read.csv("~/Desktop/R/CiteSeq/CiteSeq_meta1.csv",as.is=T))
+  x<-obj@assays$ADT@counts
+  isos<-rownames(x)[grep("isotype",(rownames(x)))]
+  isos<-isos[-6]
+  test<-ADT.normalizer2(x,citemeta,isos,cf=cf)
+  y<-t(test)
+  z<-apply(y,1,sum)
+  marks<-names(z[which(z>3)])
+  obj[["nADT"]]<-CreateAssayObject(floor(y[marks,]))
+  
+  DefaultAssay(obj)<-"ADT"
+  obj <- NormalizeData(obj, normalization.method = "CLR", margin = 2)
+  
+  return(obj)
+}
+
+# ADT Normalization 2
+
+normadt2<-function(obj, cf=NULL) {
+  arcsinh<-function(x,cf){
+    log10((x/cf)+sqrt(1+(x/cf)^2))
+  }
+  ADT.normalizer2<-function(rawmat,citemeta,isotypes,cf=NULL) {
+    require(foreach)
+    
+    fraction<-foreach(i=1:nrow(rawmat),.combine = 'rbind') %do% {
+      rawmat[i,]/apply(rawmat,2,sum)}
+    
+    rownames(fraction)<-rownames(rawmat)
+    libsize<-apply(rawmat,2,sum)
+    isonorm<-foreach(i=1:length(isotypes),.combine="rbind") %do% {
+      z2<-citemeta[citemeta$Control==isotypes[i],]$CD
+      iso<-fraction[isotypes[i],]
+      z3<-fraction[z2,]-iso
+    }
+    
+    x4<-t(t(isonorm)*median(libsize))
+    x5<-replace(x4,which(x4<0),0)
+    x5<-x5[-(grep("isotype",(rownames(x5)))),]
+    fin<-t(x5)
+    if(is.null(cf)) {return(fin)} else {
+      fin<-arcsinh(fin+1,cf)
+      return(fin)
+    }
+  }
+  citemeta<-data.frame(read.csv("~/Desktop/R/CiteSeq/CiteSeq_meta1.csv",as.is=T))
+  x<-obj@assays$ADT@counts
+  isos<-rownames(x)[grep("isotype",(rownames(x)))]
+  isos<-isos[-6]
+  test<-ADT.normalizer2(x,citemeta,isos,cf=cf)
+  y<-t(test)
+  z<-apply(y,1,sum)
+  marks<-names(z[which(z>3)])
+  obj[["nADT"]]<-CreateAssayObject(y[marks,])
+  
+  DefaultAssay(obj)<-"ADT"
+  obj <- NormalizeData(obj, normalization.method = "CLR", margin = 2)
+  
+  return(obj)
+}
+
+
+# function to do wnn for RNAseq and CITEseq data
+adt.wnn<-function(obj.list, RNA.reduction="rpca", ADT.reduction="rpca",npca1=30,npca2=30){
+
+  obj.list <- lapply(X = obj.list, FUN = SCTransform, assay="RNA", vars.to.regress = c("nCount_RNA"))
+  
+  features <- SelectIntegrationFeatures(object.list = obj.list, nfeatures = 3000)
+  obj.list <- PrepSCTIntegration(object.list = obj.list, anchor.features = features)
+  obj.list <- lapply(X = obj.list, FUN = RunPCA, features = features)
+  
+  anchors <- FindIntegrationAnchors(object.list = obj.list, normalization.method = "SCT",
+    anchor.features = features, dims = 1:30, reduction = RNA.reduction, k.anchor = 30)
+  
+  obj.combined <- IntegrateData(anchorset = anchors, normalization.method = "SCT")
+  
+  obj.combined <- RunPCA(obj.combined, verbose = FALSE)
+  obj.combined <- RunUMAP(obj.combined, reduction = "pca", dims = 1:15)
+  
+  ElbowPlot(obj.combined)
+  
+  obj.combined <- FindNeighbors(obj.combined, reduction = "pca", dims = 1:15)
+  obj.combined <- FindClusters(obj.combined, resolution = 0.5)
+  
+  obj.combined<-NormalizeData(obj.combined, assay = "RNA", normalization.method = "LogNormalize")
+  
+  DimPlot(obj.combined, label = TRUE, repel = TRUE, label.size = 5) + NoLegend()
+  
+  
+  
+  ## ADT integration
+  
+  # normalize and identify variable features for each dataset independently
+  
+  # isadt<-which(unlist(lapply(1:length(obj.list), function(x) !is.null(obj.list[[x]]@assays$ADT))))
+  # obj.list<-obj.list[isadt]
+  
+  for (i in 1:length(obj.list)){
+    DefaultAssay(obj.list[[i]])<-"nADT"
+    obj.list[[i]] <- NormalizeData(obj.list[[i]],normalization.method = "CLR",assay = "nADT")
+    obj.list[[i]] <- FindVariableFeatures(obj.list[[i]], selection.method = "vst",assay = "nADT")
+  }
+  
+  obj.combined
+  
+  # select features that are repeatedly variable across datasets for integration run PCA on each
+  # dataset using these features
+  features <- SelectIntegrationFeatures(object.list = obj.list, nfeatures = 150)
+  #features<-setdiff(features, features[grep("isotype|unmap",features)])
+  
+  obj.list <- lapply(X = obj.list, FUN = function(x) {
+    x <- ScaleData(x, features = features, verbose = FALSE)
+    x <- RunPCA(x, features = features, verbose = FALSE)
+  })
+  
+  anchors <- FindIntegrationAnchors(object.list = obj.list, anchor.features = features, reduction = ADT.reduction, k.anchor = 30)
+  ADT.combined <- IntegrateData(anchorset = anchors)
+  
+  DefaultAssay(ADT.combined) <- "integrated"
+  
+  ADT.combined <- ScaleData(ADT.combined, verbose = FALSE,vars.to.regress = "sample")
+  ADT.combined <- RunPCA(ADT.combined, npcs = 30, verbose = FALSE)
+  ADT.combined <- RunUMAP(ADT.combined, reduction = "pca", dims = 1:30)
+  ADT.combined <- FindNeighbors(ADT.combined, reduction = "pca", dims = 1:30)
+  ADT.combined <- FindClusters(ADT.combined, resolution = 0.7)
+  
+  DimPlot(ADT.combined,label = T, label.size = 5)
+  DimPlot(ADT.combined, group.by = "donor", label = T, label.size = 5)
+  
+  # combine ADT and RNA
+  
+  obj.combined[["ADT"]] <- ADT.combined[["ADT"]]
+  obj.combined[["IADT"]] <- ADT.combined[["integrated"]]
+  obj.combined[["pca.adt"]] <- ADT.combined[["pca"]]
+  obj.combined[["umap.adt"]] <- ADT.combined[["umap"]]
+  
+  # wnn
+  
+  obj.combined <- FindMultiModalNeighbors(
+    obj.combined, reduction.list = list("pca", "pca.adt"), k.nn = 40,
+    dims.list = list(1:npca1, 1:npca2), modality.weight.name = "RNA.weight"
+  )
+  
+  obj.combined <- RunUMAP(obj.combined, nn.name = "weighted.nn", reduction.name = "wnn.umap", reduction.key = "wnnUMAP_")
+  obj.combined <- FindClusters(obj.combined, graph.name = "wsnn", algorithm = 2, resolution = .2, verbose = FALSE)
+  
+  obj.combined<-NormalizeData(obj.combined, assay = "RNA", normalization.method = "LogNormalize")
+  
+  return(obj.combined)
+}
+
