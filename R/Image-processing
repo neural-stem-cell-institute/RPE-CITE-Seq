@@ -193,9 +193,9 @@ nbin1<-length(refcut1)-1
 
 #### 57 / 24
 
-R1.57.24<-cellshaper(image = "~/Desktop/R/CiteSeq/image_processing/Flatmount/RPE1_ActinGreen_CD24_CD57_3/final.tif",brush_size = 2, nbin = nbin1,ref = F, refcut = refcut1, colpal = "PuBu", feature = "area")
-R1.57<-readImage("~/Desktop/R/CiteSeq/image_processing/Flatmount/RPE1_ActinGreen_CD24_CD57_3/cd57.jpg")
-R1.24<-readImage("~/Desktop/R/CiteSeq/image_processing/Flatmount/RPE1_ActinGreen_CD24_CD57_3/cd24.jpg")
+R1.57.24<-cellshaper(image = "~/Flatmount/RPE1_ActinGreen_CD24_CD57_3/final.tif",brush_size = 2, nbin = nbin1,ref = F, refcut = refcut1, colpal = "PuBu", feature = "area")
+R1.57<-readImage("~/Flatmount/RPE1_ActinGreen_CD24_CD57_3/cd57.jpg")
+R1.24<-readImage("~/Flatmount/RPE1_ActinGreen_CD24_CD57_3/cd24.jpg")
 
 display(R1.57.24[[2]])
 
@@ -290,8 +290,8 @@ h571
 
 ##------------- P1 CD57 ---------------
 
-R2.57m<-cellshaper(image = "~/Desktop/R/CiteSeq/image_processing/Flatmount/CD57_270_macula/mask.tif",brush_size = 2, nbin = nbin1,ref = F, refcut = refcut1, colpal = "PuBu", feature = "area")
-R2.57<-readImage("~/Desktop/R/CiteSeq/image_processing/Flatmount/CD57_270_macula/CD57_270_macula-Image Calculator-27-Add Channels-28_c1.jpg")
+R2.57m<-cellshaper(image = "~/Flatmount/CD57_270_macula/mask.tif",brush_size = 2, nbin = nbin1,ref = F, refcut = refcut1, colpal = "PuBu", feature = "area")
+R2.57<-readImage("~/Flatmount/CD57_270_macula/CD57_270_macula-Image Calculator-27-Add Channels-28_c1.jpg")
 
 display(R2.57m[[2]])
 
@@ -343,10 +343,10 @@ h572
 
 ### start CD270
 
-R1.270<-cellshaper(image = "~/Desktop/R/CiteSeq/image_processing/Flatmount/RPE1_CD57_270_10/ridge-pruned.tif",brush_size = 2, nbin = nbin1,ref = F, refcut = refcut1, colpal = "PuBu", feature = "area")
-R1.27<-readImage("~/Desktop/R/CiteSeq/image_processing/Flatmount/RPE1_CD57_270_10/RPE1_CD57_270_10_c3.jpg")
+R1.270<-cellshaper(image = "~/Flatmount/RPE1_CD57_270_10/ridge-pruned.tif",brush_size = 2, nbin = nbin1,ref = F, refcut = refcut1, colpal = "PuBu", feature = "area")
+R1.27<-readImage("~/Flatmount/RPE1_CD57_270_10/RPE1_CD57_270_10_c3.jpg")
 
-a<-readImage("~/Desktop/R/CiteSeq/image_processing/Flatmount/RPE1_CD57_270_10/ridge-pruned.tif")
+a<-readImage("~/Flatmount/RPE1_CD57_270_10/ridge-pruned.tif")
   
 af270<-image.intensity(R1.27,R1.270)
 
@@ -395,10 +395,10 @@ h270
 
 #------ CD24 P3 -----
 
-RPE361.CD24<-cellshaper(image = "~/Desktop/R/CiteSeq/image_processing/calculated/CD24_7-Image Calculator-24-Add Channels-26/ridge-pruned.tif",
+RPE361.CD24<-cellshaper(image = "~/calculated/CD24_7-Image Calculator-24-Add Channels-26/ridge-pruned.tif",
                         brush_size = 2, nbin = nbin1,ref = F, refcut = refcut1, colpal = "PuBu", feature = "area")
 
-RRPE361.24<-readImage("~/Desktop/R/CiteSeq/image_processing/calculated/CD24_7-Image Calculator-24-Add Channels-26/CD24_7-Image Calculator-24-Add Channels-26_c1.jpg")
+RRPE361.24<-readImage("~/calculated/CD24_7-Image Calculator-24-Add Channels-26/CD24_7-Image Calculator-24-Add Channels-26_c1.jpg")
 
 display(RPE361.CD24[[2]])
 display(RRPE361.24)
@@ -458,10 +458,10 @@ h242
 
 # CD61
 
-RPE.CD61<-cellshaper(image = "~/Desktop/R/CiteSeq/image_processing/calculated/CD61_human_flatmount-Image Calculator-12-Add Channels-21/ridge-pruned.tif",
+RPE.CD61<-cellshaper(image = "~/calculated/CD61_human_flatmount-Image Calculator-12-Add Channels-21/ridge-pruned.tif",
                         brush_size = 2, nbin = nbin1,ref = F, refcut = refcut1, colpal = "PuBu", feature = "area")
 
-RRPE.61<-readImage("~/Desktop/R/CiteSeq/image_processing/calculated/CD61_human_flatmount-Image Calculator-12-Add Channels-21/CD61.jpg")
+RRPE.61<-readImage("~/calculated/CD61_human_flatmount-Image Calculator-12-Add Channels-21/CD61.jpg")
 display(RRPE.61)
 display(RPE.CD61$image)
 
@@ -580,11 +580,11 @@ nbin1<-length(refcut1)-1
 
 #### cultured
 
-RPE353.57<-cellshaper(image = "~/Desktop/R/CiteSeq/image_processing/Cultured/RPE353_57_270-3/Actin_ridge-pruned.tif",
+RPE353.57<-cellshaper(image = "~/Cultured/RPE353_57_270-3/Actin_ridge-pruned.tif",
                       brush_size = 2, nbin = nbin1,ref = F, refcut = refcut1, colpal = "PuBu", feature = "area")
 display(RPE353.57[[2]])
 
-img<-R3.270<-readImage("~/Desktop/R/CiteSeq/image_processing/Cultured/RPE353_57_270-3/RPE353_57_270-3_c3.jpg")
+img<-R3.270<-readImage("~/Cultured/RPE353_57_270-3/RPE353_57_270-3_c3.jpg")
 display(img)
 
 
@@ -632,7 +632,7 @@ h53.270
 #cultured 57
 
 
-img2<-R3.57<-readImage("~/Desktop/R/CiteSeq/image_processing/Cultured/RPE353_57_270-3/RPE353_57_270-3-Shading.jpg")
+img2<-R3.57<-readImage("~/Cultured/RPE353_57_270-3/RPE353_57_270-3-Shading.jpg")
 display(img2)
 
 
@@ -681,11 +681,11 @@ p357
 
 # RPE354 CD24
 
-RPE354.24<-cellshaper(image = "~/Desktop/R/CiteSeq/image_processing/Cultured/RPE354_24/mask.tif",
+RPE354.24<-cellshaper(image = "~/Cultured/RPE354_24/mask.tif",
                       brush_size = 2, nbin = nbin1,ref = F, refcut = refcut1, colpal = "PuBu", feature = "area")
 display(RPE354.24[[2]])
 
-img<-R4.24<-readImage("~/Desktop/R/CiteSeq/image_processing/Cultured/RPE354_24/RPE354_24_c3.jpg")
+img<-R4.24<-readImage("~/Cultured/RPE354_24/RPE354_24_c3.jpg")
 display(img)
 
 
@@ -735,11 +735,11 @@ p
 
 # RPE355 CD24
 
-RPE355.24<-cellshaper(image = "~/Desktop/R/CiteSeq/image_processing/Cultured/RPE355_24-3/label-pruned.tif",
+RPE355.24<-cellshaper(image = "~/Cultured/RPE355_24-3/label-pruned.tif",
                       brush_size = 2, nbin = nbin1,ref = F, refcut = refcut1, colpal = "PuBu", feature = "area")
 display(RPE355.24[[2]])
 
-img<-R5.24<-readImage("~/Desktop/R/CiteSeq/image_processing/Cultured/RPE355_24-3/RPE355_24-3_c3.jpg")
+img<-R5.24<-readImage("~/Cultured/RPE355_24-3/RPE355_24-3_c3.jpg")
 display(img)
 
 
@@ -790,11 +790,11 @@ p
 
 # RPE355 CD270/CD57
 
-RPE355.57<-cellshaper(image = "~/Desktop/R/CiteSeq/image_processing/Cultured/RPE355_57_270_20x_21/mask.tif",
+RPE355.57<-cellshaper(image = "~/Cultured/RPE355_57_270_20x_21/mask.tif",
                       brush_size = 2, nbin = nbin1,ref = F, refcut = refcut1, colpal = "PuBu", feature = "area")
 display(RPE355.57[[2]])
 
-img<-R5.270<-readImage("~/Desktop/R/CiteSeq/image_processing/Cultured/RPE355_57_270_20x_21/RPE355_57_270_20x_2_c3.jpg")
+img<-R5.270<-readImage("~/Cultured/RPE355_57_270_20x_21/RPE355_57_270_20x_2_c3.jpg")
 display(img)
 
 c5270<-image.intensity(R5.270,RPE355.57)
@@ -842,7 +842,7 @@ p5270
 
 #cultured 355 CD57
 
-img2<-R5.57<-readImage("~/Desktop/R/CiteSeq/image_processing/Cultured/RPE355_57_270_20x_21/RPE355_57_270_20x_2_c4.jpg")
+img2<-R5.57<-readImage("~/Cultured/RPE355_57_270_20x_21/RPE355_57_270_20x_2_c4.jpg")
 display(img2)
 
 c557<-image.intensity(R5.57,RPE355.57)
@@ -891,11 +891,11 @@ p557
 
 ## CD61 cultured RPE358
 
-RPE358.61<-cellshaper(image = "~/Desktop/R/CiteSeq/raw_figures/ITGB3_mask.tif",
+RPE358.61<-cellshaper(image = "~/Cultured/raw_figures/ITGB3_mask.tif",
                       brush_size = 2, nbin = nbin1,ref = F, refcut = refcut1, colpal = "PuBu", feature = "area")
 display(RPE358.61[[2]])
 
-img<-R8.61<-readImage("~/Desktop/R/CiteSeq/raw_figures/1_1-Create Image Subset-13/c2.jpg")
+img<-R8.61<-readImage("~/Cultured/raw_figures/1_1-Create Image Subset-13/c2.jpg")
 display(img)
 
 
