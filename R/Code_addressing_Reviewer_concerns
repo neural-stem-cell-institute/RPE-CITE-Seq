@@ -1,0 +1,140 @@
+library(Seurat)
+library(screp)
+library(hypeR)
+library(ggplot2)
+library(GO.db)
+
+#### Figure 1F
+##########native enrichment analysis 
+y <- Term(GOTERM)
+goterms<-names(y)
+names(goterms)<-y
+GOBP <- msigdb_gsets(species="Homo sapiens", category="C5", subcategory="BP")
+
+x<-obj0@misc$markers
+x<-x[x$p_val_adj<0.1,]
+x<-x[,6:7]
+y<-unique(x$cluster)
+x<-foreach(i=1:length(unique(x$cluster))) %do% {
+  x[x$cluster==unique(x$cluster)[i],2]
+}
+names(x)<-y
+eres<-enrich_test(clust_list=x,species_x="Homo sapiens",genome_genes=42937)
+go_vis_sc<-GO_visualization(eres$Enriched_df,clust_list=x,GOcats=GOBP,goterms=goterms,numcats=10,org_db="org.Hs.eg.db")
+go_vis_sc$plot      
+write.csv(go_vis_sc$GO_sem,"Native_GO.csv")
+
+y<-c("cell cycle","regeneration","regulation of cell differentiation",
+     "response to extracellular stimulus","cellular response to stress",
+     "locomotion","secretion","transmembrane transport",
+     "small molecule metabolic process","generation of precursor metabolites and energy")
+go_choice<-GO_viz_choose(go_vis_sc,clust_list=x,chosen_cats=y,goterms=goterms,species_x="Homo sapiens")
+
+go_choice$plot
+
+###Supplemental Figure S1
+x<-gg_color_hue(12)
+y<-obj10@meta.data
+par(mfrow=c(2,2))
+plot(density(y$nCount_RNA),lwd=4,ylim=c(0,5e-6),main="QC: Total RNA Counts", xlab="Reads")
+for(i in 0:11) {
+  lines(density(y[which(y$wsnn_res.0.15==i),]$nCount_RNA),col=x[i+1],lwd=2)
+}
+legend(x="topright",title="Cluster",legend=c("All",as.character(0:11)),fill=c("black",x))
+
+plot(density(y$nFeature_RNA),lwd=4,ylim=c(0,4e-4),main="QC: Total Genes Detected", xlab="Genes detected")
+for(i in 0:11) {
+  lines(density(y[which(y$wsnn_res.0.15==i),]$nFeature_RNA),col=x[i+1],lwd=2)
+}
+legend(x="topright",title="Cluster",legend=c("All",as.character(0:11)),fill=c("black",x))
+
+plot(density(y$percent.mt),lwd=4,ylim=c(0,0.1),main="QC:% Mitochondrial", xlab="% Mitochondrial Reads")
+for(i in 0:11) {
+  lines(density(y[which(y$wsnn_res.0.15==i),]$percent.mt),col=x[i+1],lwd=2)
+}
+legend(x="topright",title="Cluster",legend=c("All",as.character(0:11)),fill=c("black",x))
+
+plot(density(y$nCount_ADT),lwd=4,ylim=c(0,6.5e-6),main="QC: Total ADT count", xlab="ADT Reads")
+for(i in 0:11) {
+  lines(density(y[which(y$wsnn_res.0.15==i),]$nCount_ADT),col=x[i+1],lwd=2)
+}
+legend(x="topright",title="Cluster",legend=c("All",as.character(0:11)),fill=c("black",x))
+
+x<-FindMultiModalNeighbors(obj0,list("pca","apca"),dims.list=list(2:30,2:15),k.nn=30,return.intermediate = T)
+plot(density(x@misc$modality.weight@modality.weight.list$pca),lwd=2,xlim=c(0,1))
+lines(density(x@misc$modality.weight@modality.weight.list$apca),col="red",lwd=2)
+
+
+x<-FindMultiModalNeighbors(obj10,list("pca","apca"),dims.list=list(3:30, c(3:13)),k.nn=40,return.intermediate = T)
+plot(density(x@misc$modality.weight@modality.weight.list$pca),lwd=2,xlim=c(0,1))
+lines(density(x@misc$modality.weight@modality.weight.list$apca),lwd=2,col="red")
+
+###figure 3H
+x<-obj10@meta.data
+table(x$wsnn_res.0.15)
+x2<-table(x[x$time=="2W",]$wsnn_res.0.15)/2586
+x4<-table(x[x$time=="4W",]$wsnn_res.0.15)/3354
+x10<-table(x[x$time=="10W",]$wsnn_res.0.15)/2431
+x0<-table(x[x$time=="P0",]$wsnn_res.0.15)/3706
+colnames(y)<-c("Native","2W","4W","10W")
+y<-data.frame(rbind(cbind(x0,rep("Native",12)),
+         cbind(x2,rep("2W",12)),
+         cbind(x4,rep("4W",12)),
+         cbind(x10,rep("10W",12))))
+colnames(y)<-c("value","Time")
+y$value<-as.numeric(y$value)
+z<-rep(0:11,4)
+z<-factor(z,levels=as.character(0:11))
+y$Cluster<-z
+y$Time<-factor(y$Time,levels=c("Native","2W","4W","10W"))
+
+p<-ggplot(y, aes(fill=Time, y=value, x=Cluster))  
+p<-p+geom_bar(position="dodge", stat="identity")
+p<-p + theme_bw()
+p
+
+###figure 3F
+x<-obj10@meta.data
+table(x$wsnn_res.0.15)
+x2<-table(x[x$time=="2W",]$wsnn_res.0.15)
+x4<-table(x[x$time=="4W",]$wsnn_res.0.15)
+x10<-table(x[x$time=="10W",]$wsnn_res.0.15)
+x0<-table(x[x$time=="P0",]$wsnn_res.0.15)
+### completed figure in Illustrator using stacked bar graph tool and above numbers
+
+### figure 5B
+x<-obj10@misc$markers
+x<-x[which(x$pct.1>0.2),]
+x<-x[,6:7]
+y<-unique(x$cluster)
+x<-foreach(i=1:length(unique(x$cluster))) %do% {
+  x[x$cluster==unique(x$cluster)[i],2]
+}
+names(x)<-y
+markers1<-FindAllMarkers(obj10)
+markers1<-markers1[which(markers1$pct.1>0.2),]
+markers1<-markers1[which(markers1$p_val_adj<0.05),]
+eres<-enrich_test(markers_df=markers1)
+go_vis_sc<-GO_visualization(eres$Enriched_df,markers_df=markers1,
+                            GOcats=GOBP,goterms=goterms,numcats=10)
+go_vis_sc$plot
+allgo<-data.frame(read.csv("ALL_go.csv"))
+
+y<-c("pigmentation", #0
+     "cellular response to stress", #0,1,10,3,4,9
+     "response to wounding", #2
+     "locomotion", #2,4,9
+     "cell cycle", #0,3,9
+     "homeostatic process", #10,5,7
+     "growth", #10,5,7,8
+     "response to endogenous stimulus", #1,10,7
+     "transmembrane transport", #7,8
+     "establishment or maintenance of cell polarity", #2,3,4,9
+     "cell morphogenesis",#9
+     "response to extracellular stimulus", #10,7
+     "sensory perception of light stimulus" #1,7
+     )
+go_choice<-screp::GO_viz_choose(go_vis_sc,markers_df=markers1,GOcats=GOBP,chosen_cats=y,goterms=goterms,species_x="Homo sapiens")
+go_choice$plot
+
+
