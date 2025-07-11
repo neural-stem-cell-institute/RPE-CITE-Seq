@@ -332,7 +332,3 @@ DotPlot(obj0, features = g, assay = "RNA",
   ylab("Cluster")+
   theme(axis.text.x = element_text(angle=90,size=10),axis.title.x = element_blank())
 
-
-
-
-                   
